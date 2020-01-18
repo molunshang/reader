@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>searchN</title>
+		<meta http-equiv="Access-Control-Allow-Origin" content="*">
+		<meta http-equiv="content-security-policy">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+		<link href="css/mui.min.css" rel="stylesheet" />
+	</head>
+
+	<body>
+		<div class="mui-input-row mui-search">
+			<input id="searchInput" type="search" class="mui-input-clear" placeholder="请输入小说名称或作者" />
+		</div>
+
+		<script src="js/mui.js"></script>
+		<script type="text/javascript">
+			mui.init();
+			mui.plusReady(function() {
+				function setNames(bookNames) {
+					var title = document.getElementById("hotbooks");
+					var content = [];
+					for (i = 0; i < bookNames.length; i++) {
+						content.push("<span class='mui-badge mui-badge-danger' onclick=\"selectbook('" + bookNames[i] + "')\">" +
+							bookNames[i] + "</span> ");
+					}
+					title.innerHTML = content.join("");
+				}
+				//选择热门
+				function selectbook(name) {
+					mui.openWindow({
+						url: 'pages/searchList.html',
+						extras: {
+							keyword: name
+						}
+					})
+				}
+				//搜索
+				function enterSearch(e) {
+					if (e.keyCode == 13) {
+						var name = text.value;
+						if (name == '') {
+							plus.nativeUI.toast('搜索关键字不能为空！');
+							return;
+						}
+						selectbook(name);
+					}
+				}
+				var text = document.querySelector('#searchInput');
+				text.addEventListener("keyup", enterSearch);
+
+				window.addEventListener("onLeave", function() {
+					text.value = "";
+				});
+			});
+		</script>
+	</body>
+
+</html>

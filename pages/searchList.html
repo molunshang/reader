@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta http-equiv="Access-Control-Allow-Origin" content="*">
+		<meta http-equiv="content-security-policy">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<style type="text/css">
+			div.mui-media-body {
+				white-space: nowrap;
+				text-overflow: ellipsis;
+			}
+
+			.auto-line {
+				white-space: pre-wrap;
+			}
+
+			.mui-table-view .mui-media-object {
+				line-height: 90px;
+				max-width: 70px;
+				min-width: 70px;
+				height: 90px;
+			}
+		</style>
+	</head>
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">全网搜索</h1>
+		</header>
+		<div class="mui-content" style="margin-top:-15px;width: 100%;">
+			<div class="mui-card" style="left: -10px; width: 100%;">
+				<ul id="novels" class="mui-table-view ref">
+					<li class="mui-table-view-divider" v-if="noResult"><a>{{searchNovel}}</a>搜索结果（ 共搜索到 <a> 0 </a>条相关数据）</li>
+					<li class="mui-table-view-cell" v-for="(item,index) in items" v-on:click="detail(index)">
+						<a href="javascript:void(0)">
+							<img class="mui-media-object mui-pull-left" :data-lazyload="item.cover" onerror="this.src='../images/nocover.jpg'"
+							 src="../images/nocover.jpg" />
+							<div class="mui-media-body">{{item.title}}
+								<p class="mui-ellipsis ">作&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;者：{{item.author}}</p>
+								<p class="mui-ellipsis ">更新时间：{{item.updateTime}}</p>
+								<p class="mui-ellipsis auto-line">简介：{{item.desc}}</p>
+							</div>
+						</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+		<script src="../js/require.js"></script>
+		<script type="text/javascript">
+			require(["../js/lib.js"], function() {
+				require(["api", "vue", "mui"], function(api, Vue, mui) {
+					require(["mui.lazyload"], function() {
+						require(["mui.lazyload.img"], function() {
+							var novelView = new Vue({
+								el: '#novels',
+								data: {
+									searchNovel: "",
+									noResult: false,
+									items: []
+								},
+								methods: {
+									detail: function(index) {
+										var novel = this.items[index];
+										console.log(JSON.stringify(novel));
+										mui.openWindow({
+											url: 'bookCard.html',
+											extras: {
+												data: novel
+											}
+										});
+									}
+								}
+							});
+							mui.init();
+							mui.plusReady(function() {
+								var self = plus.webview.currentWebview();
+								var name = self.keyword;
+								novelView.searchNovel = name;
+								plus.nativeUI.showWaiting();
+								api.searchNovel(name).then(function(results) {
+									novelView.items = results;
+									novelView.noResult = results.length == 0;
+									novelView.$nextTick(function() {
+										mui("#novels").imageLazyload({
+											placeholder: 'images/nocover.jpg'
+										})
+									});
+								}).finally(function() {
+									plus.nativeUI.closeWaiting()
+								});
+							});
+						})
+					})
+				})
+			});
+		</script>
+	</body>
+</html>

@@ -1,0 +1,324 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="Access-Control-Allow-Origin" content="*">
+		<meta http-equiv="content-security-policy">
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+		<link href="css/mui.min.css" rel="stylesheet" />
+		<style type="text/css">
+			div.mui-media-body {
+				white-space: nowrap;
+				text-overflow: ellipsis;
+			}
+
+			.mui-table-view .mui-media-object {
+				line-height: 90px;
+				max-width: 70px;
+				min-width: 70px;
+				height: 90px;
+			}
+
+			.circle {
+				border-radius: 50%;
+				width: 10px;
+				height: 10px;
+				padding: 0px;
+			}
+
+			[v-cloak] {
+				display: none;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="refreshContainer" class="mui-content mui-scroll-wrapper">
+			<!--下拉刷新容器-->
+			<div class="mui-scroll" id="pullrefresh">
+				<ul v-cloak class="mui-table-view" id="ulSwitch">
+					<li class="mui-table-view-cell" v-for="(item,index) in items" v-on:click="readBook(index)">
+						<div :data="index">
+							<a>
+								<img class="mui-media-object mui-pull-left" src="images/nocover.jpg" :pre-image="item.cover" onerror="this.src='images/nocover.jpg'">
+								<div class="mui-media-body">
+									{{item.title}}
+									<p class='mui-ellipsis'>作&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;者：{{item.author}}</p>
+									<p class='mui-ellipsis'>更新时间：{{item.updateTime}}</p>
+									<p class='mui-ellipsis'>最新章节：{{item.lastChapter}}</p>
+								</div>
+							</a>
+						</div>
+						<span class="mui-badge mui-badge-danger circle" v-if="item.hasNew"></span>
+					</li>
+				</ul>
+			</div>
+		</div>
+		<script src="js/jquery-1.9.0.min.js"></script>
+		<script src="js/mui.js"></script>
+		<script src="js/common.js"></script>
+		<script src="js/localdata.js"></script>
+		<script src="js/config.js"></script>
+		<script src="js/vue.min.js" type="text/javascript" charset="utf-8"></script>
+		<script>
+			mui.init({
+				gestureConfig: {
+					longtap: true
+				},
+				pullRefresh: {
+					container: '#refreshContainer',
+					down: {
+						callback: pullBookUpdate
+					}
+				}
+			});
+
+			var list = new Vue({
+				el: '#pullrefresh',
+				data: {
+					items: [],
+					bookIds: [],
+					bookMap: {},
+					index: 0
+				},
+				watch: {
+					items: {
+						handler: function(oldVal, newVal) {
+							this.$nextTick(function() {
+								mui("#ulSwitch [pre-image]").each(function(i, el) {
+									el.onerror = function() {
+										el.src = "images/nocover.jpg"
+									}
+									var url = el.getAttribute("pre-image");
+									if (url.endsWith("/")) {
+										url = url.substr(0, url.length - 1);
+									} else if (url.startsWith("/")) {
+										el.src = url;
+										return;
+									}
+									var localPath = "_downloads/" + url;
+									var fileFuture = new Promise(function(reslove, reject) {
+										plus.io.resolveLocalFileSystemURL(localPath, function(entry) {
+											localPath = plus.io.convertLocalFileSystemURL(localPath)
+											el.src = localPath;
+											reslove(localPath);
+										}, function(e) {
+											var dtask = plus.downloader.createDownload(url, {
+												filename: localPath
+											}, function(d, status) {
+												if (status == 200) {
+													localPath = plus.io.convertLocalFileSystemURL(localPath)
+													el.src = localPath;
+													reslove(localPath);
+												} else {
+													if (localPath != null) {
+														plus.io.resolveLocalFileSystemURL(localPath, function(entry) {
+															entry.remove();
+														});
+													}
+													reject();
+												}
+											});
+											dtask.start();
+										});
+									});
+									fileFuture.then(function(path) {})
+									el.removeAttribute("pre-image");
+								});
+							});
+							while (this.bookIds.length > 0) {
+								var bookId = this.bookIds.pop();
+								delete this.bookMap[bookId];
+							}
+							for (var i = 0; i < this.items.length; i++) {
+								var item = this.items[i];
+								this.bookIds.push(item.id);
+								this.bookMap[item.id] = item;
+							}
+						}
+					}
+				},
+				methods: {
+					readBook: function(index) {
+						this.index = index;
+						var book = this.items[index];
+						mui.openWindow({
+							id:"readerTxt",
+							url: 'reader/readerTxt.html',
+							extras: {
+								book: {
+									id: book.id,
+									title: book.title,
+									sources: book.sources
+								}
+							}
+						});
+					},
+					removeBook: function(index) {
+						var btnArray = ['确认', '取消'];
+						mui.confirm('确认删除该条记录？', '停止追更', btnArray, function(e) {
+							if (e.index != 0) {
+								return;
+							}
+							var book = list.items[index];
+							list.items.splice(index, 1);
+							store.deleteBook(book.id);
+						});
+					}
+				}
+			});
+
+			var refreshApi;
+
+			function doPullDownRefresh() {
+				refreshApi = mui("#refreshContainer").pullRefresh();
+				if (refreshApi) {
+					refreshApi.pulldownLoading();
+					return;
+				}
+				setTimeout(function() {
+					doPullDownRefresh();
+				}, 1)
+			}
+
+			mui.plusReady(function() {
+				// plus.navigator.setUserAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36", false);
+				var listFuture = store.getBookList();
+				listFuture.then(function(bookList) {
+					if (!bookList || bookList.length <= 0) {
+						return;
+					}
+					list.items = bookList;
+					list.$nextTick(function() {
+						doPullDownRefresh();
+					});
+				}).catch(function() {
+					console.log(JSON.stringify(arguments));
+				});
+			})
+
+			function checkUpdate(index, changeSize, saveUpdate) {
+				if (!list.items || index >= list.items.length) {
+					if (changeSize > 0) {
+						list.$nextTick(function() {
+							mui.toast("小说已更新");
+						});
+					} else {
+						mui.toast("小说暂无更新");
+					}
+
+					refreshApi.endPulldown();
+					return;
+				}
+				var item = list.items[index];
+				mui.ajax(item.id, {
+					dataType: 'html',
+					type: 'get',
+					timeout: 10000,
+					success: function(html) {
+						var site = sites.findSite(item.id);
+						var doc = $($.trim(html));
+						var images = doc.find("img");
+						$.each(images, function(i, img) {
+							$(img).attr("onerror", "");
+						});
+						var updateStr = doc.find(site.detailUpdated.css).text();
+						var updated = updateStr.match(site.detailUpdated.regex);
+						updated = updated ? updated[0] : "";
+						var chapterSize = doc.find(site.chapter).length;
+						var lastChapter = $.trim(doc.find(site.lastChapter).text().subFromStr("："));
+						var newer = {
+							chaptersCount: chapterSize,
+							updated: updated,
+							lastChapter: lastChapter
+						};
+						var older = list.bookMap[item.id];
+						if (saveUpdate(older, newer)) {
+							changeSize++;
+						}
+						setTimeout(function() {
+							checkUpdate(index + 1, changeSize, saveUpdate);
+						}, 100);
+					},
+					error: function() {
+						setTimeout(function() {
+							checkUpdate(index + 1, changeSize, saveUpdate);
+						}, 100);
+						// if (changeSize > 0) {
+						// 	list.$nextTick(function() {
+						// 		mui.toast("小说已更新");
+						// 	});
+						// } else {
+						// 	mui.toast("似乎已断开与互联网的连接");
+						// }
+						// refreshApi.endPulldown();
+					}
+				});
+			}
+
+			function pullBookUpdate() {
+				if (!refreshApi) {
+					refreshApi = mui("#refreshContainer").pullRefresh();
+				}
+
+				function saveUpdate(before, after) {
+					var hasNew = before.hasNew;
+					var hasChange = before.chaptersCount < after.chaptersCount || before.lastChapter != after.lastChapter;
+					before.updateTime = formatDate(after.updated);
+					before.hasNew = hasChange || before.lastRead < new Date(after.updated).getTime();
+					before.lastChapter = after.lastChapter;
+					before.chaptersCount = after.chaptersCount;
+					if (hasChange || hasNew != before.hasNew) {
+						store.saveBook(before);
+						return true;
+					}
+					return false;
+				}
+				if (list.items.length <= 0) {
+					refreshApi.endPulldown();
+				}
+				if (window.plus && plus.networkinfo.getCurrentType() === plus.networkinfo.CONNECTION_NONE) {
+					plus.nativeUI.toast('似乎已断开与互联网的连接', {
+						verticalAlign: 'top'
+					});
+					refreshApi.endPulldown();
+					return;
+				}
+				list.$nextTick(function() {
+					checkUpdate(0, 0, saveUpdate);
+				});
+			}
+
+			mui("#ulSwitch").on("longtap", "div[data]", function() {
+				var index = parseInt(this.getAttribute("data"));
+				list.removeBook(index);
+			});
+
+			window.addEventListener('addBook', function(e) { //执行刷新
+				if (!e.detail) {
+					return;
+				}
+				list.items.unshift(e.detail);
+			});
+
+			window.addEventListener('moveTop', function(e) { //执行刷新
+				if (list.items.length <= 0) {
+					return;
+				}
+				var index = list.index;
+				var book = list.items[index];
+				book.lastRead = new Date().getTime();
+				book.hasNew = false;
+				list.items.splice(index, 1);
+				list.items.unshift(book);
+				store.saveBook(book);
+				list.index = 0;
+			});
+		</script>
+	</body>
+
+</html>

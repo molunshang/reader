@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta http-equiv="Access-Control-Allow-Origin" content="*">
+		<meta http-equiv="content-security-policy">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<style type="text/css">
+			div.mui-media-body {
+				margin-left: 0px !important;
+			}
+
+			.mui-media-body p {
+				word-break: normal;
+				white-space: pre-warp;
+				word-wrapL: break-word;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">小说换源</h1>
+		</header>
+		<div id="bookSources" class="mui-content" style="margin-top:-15px;width: 100%;">
+			<div class="mui-card" style="left: -10px; width: 100%;">
+				<div class="mui-card-header mui-card-media" v-for="item in list" v-on:click="changeSource(item)">
+					<div class="mui-media-body">
+						{{item.sourceName}}
+						<p>{{item.lastChapter}}</p>
+						<p>{{item.href}}</p>
+						<p>{{item.updated}}</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script src="../js/require.js"></script>
+		<script type="text/javascript">
+			require(["../js/lib.js"], function() {
+				require(["mui", "vue", "api", "common"], function(mui, Vue, api) {
+					mui.init();
+					mui.plusReady(function() {
+						var sourceCache = {};
+						var chapter;
+						var sourceList = new Vue({
+							el: '#bookSources',
+							data: {
+								list: []
+							},
+							methods: {
+								changeSource: function(source) {
+									chapter = chapter || plus.webview.getWebviewById("chapter.html");
+									mui.fire(chapter, "changeSource", source.chapters);
+									chapter.show();
+								}
+							}
+						});
+						window.addEventListener("beforeShow", function(e) {
+							if (!e.detail || e.detail.length <= 0) {
+								return;
+							}
+							var list = [],
+								tasks = [];
+							for (var i = 0; i < e.detail.length; i++) {
+								var source = e.detail[i].href;
+								(function(source) {
+									if (sourceCache[source]) {
+										list.push(sourceCache[source]);
+									} else {
+										tasks.push(api.getNovelDetail(source).then(function(book) {
+											sourceCache[source] = book;
+											return book;
+										}));
+									}
+								})(source);
+							}
+							if (tasks.length <= 0) {
+								sourceList.list = list;
+							} else {
+								plus.nativeUI.showWaiting("加载中")
+								Promise.all(tasks).then(function(books) {
+									for (var i = 0; i < books.length; i++) {
+										var book = books[i];
+										if (book) {
+											list.push(book)
+										}
+									}
+									sourceList.list = list;
+								}).finally(function() {
+									plus.nativeUI.closeWaiting();
+								});
+							}
+						});
+					});
+				});
+			});
+		</script>
+	</body>
+
+</html>

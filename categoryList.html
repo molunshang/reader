@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta http-equiv="Access-Control-Allow-Origin" content="*">
+		<meta http-equiv="content-security-policy">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+		<link href="css/mui.min.css" rel="stylesheet" />
+		<style type="text/css">
+			[v-cloak] {
+				display: none;
+			}
+			
+			div.mui-media-body {
+				white-space: nowrap;
+				text-overflow: ellipsis;
+			}
+			
+			.mui-table-view .mui-media-object {
+				line-height: 90px;
+				max-width: 70px;
+				min-width: 70px;
+				height: 90px;
+			}
+			
+			.mui-pull-bottom-tips {
+				text-align: center;
+				background-color: #efeff4;
+				font-size: 15px;
+				line-height: 40px;
+				color: #777;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div v-cloak id="categoryTab">
+			<header class="mui-bar mui-bar-nav">
+				<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+				<h1 class="mui-title">{{category.name}}</h1>
+			</header>
+			<div class="mui-content">
+				<div>
+					<div id="typeHeader" class="mui-slider-indicator mui-segmented-control mui-segmented-control-inverted">
+						<a class="mui-control-item mui-active" index="new" href="#new">
+							新书
+						</a>
+						<a class="mui-control-item" index="hot" href="#hot">
+							热门
+						</a>
+						<a class="mui-control-item" index="reputation" href="#reputation">
+							口碑
+						</a>
+						<a class="mui-control-item" index="over" href="#over">
+							完结
+						</a>
+					</div>
+					<div>
+						<div class="mui-control-content" v-for="(type,index) in types" :id="type.type" v-bind:class="{'mui-active':index==0}">
+							<div class="mui-scroll-wrapper">
+								<div class="mui-scroll" :type="type.type">
+									<ul class="mui-table-view ref">
+										<li class="mui-table-view-cell" v-for="item in type.list">
+											<a href="javascript:void(0)" v-on:click="readBook(item)">
+												<img class="mui-media-object mui-pull-left" src="images/nocover.jpg" :data-lazyload='item.cover' onerror="javascript:this.src='images/nocover.jpg';">
+												<div class="mui-media-body">
+													{{item.title}}
+													<p class='mui-ellipsis'>作者：{{item.author}}</p>
+													<p class="mui-ellipsis">简介：{{item.shortIntro}}</p>
+												</div>
+											</a>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script src="js/mui.js"></script>		
+		<script src="js/mui.lazyload.js"></script>
+		<script src="js/mui.lazyload.img.js"></script>
+		<script src="js/vue.min.js"></script>
+		<script type="text/javascript">
+			mui.init();
+			var ready;
+			if(mui.os.plus) {
+				ready = mui.plusReady;
+			} else {
+				ready = mui.ready;
+			}
+			ready(function() {
+				var category, gender;
+				if(mui.os.plus) {
+					var self = plus.webview.currentWebview();
+					category = self.item;
+					gender = self.type;
+				} else {
+					category = {
+						"name": "仙侠",
+						"bookCount": 151610,
+						"monthlyCount": 7541
+					};
+					gender = "male";
+				}
+				var cache = {};
+				var categoryTab = new Vue({
+					el: '#categoryTab',
+					data: {
+						category: category,
+						gender: gender,
+						types: [{
+							type: "new",
+							list: [],
+							start: 0
+						}, {
+							type: "hot",
+							list: [],
+							start: 0
+						}, {
+							type: "reputation",
+							list: [],
+							start: 0
+						}, {
+							type: "over",
+							list: [],
+							start: 0
+						}],
+						map: {}
+					},
+					methods: {
+						readBook: function(book) {
+							mui.openWindow({
+								url: 'pages/bookCard.html',
+								extras: {
+									data: book._id
+								}
+							});
+						}
+					}
+				});
+				for(var i = 0; i < categoryTab.types.length; i++) {
+					var item = categoryTab.types[i];
+					categoryTab.map[item.type] = item;
+				}
+
+				function load(item) {
+					return loadList(item.start, gender, category.name, item.type).then(function(list) {
+						if(list.books.length > 0) {
+							for(var i = 0; i < list.books.length; i++) {
+								var book = list.books[i];
+								if(book.contentType != "txt") {
+									continue;
+								}
+								book.cover = book.cover ? decodeURIComponent(book.cover.substr(7)) : "images/nocover.jpg";
+								item.list.push(book);
+							}
+							if(item.start > 0 || item.type == categoryTab.types[0].type) {
+								categoryTab.$nextTick(function() {
+									cache[item.type] = mui("#" + item.type + " .mui-scroll-wrapper").imageLazyload({
+										placeholder: 'images/nocover.jpg'
+									});
+								});
+							}
+							item.start += list.books.length;
+						}
+						return list.books;
+					});
+				}
+
+				//typeHeader
+				var header = document.getElementById("typeHeader");
+				var scrollHeight = (window.clientHeight || window.innerHeight) - header.offsetTop - header.clientHeight;
+				mui(".mui-scroll-wrapper").scroll({
+					bounce: false,
+					indicators: true,
+					deceleration: mui.os.ios ? 0.003 : 0.0009
+				});
+				mui.each(document.querySelectorAll(".mui-scroll-wrapper"), function(index, ele) {
+					ele.style.height = scrollHeight + "px";
+				});
+				mui.each(document.querySelectorAll(".mui-scroll"), function(index, ele) {
+					var pull = mui(ele).pullToRefresh({
+						up: {
+							callback: function() {
+								var self = this;
+								var type = self.element.getAttribute("type");
+								var item = categoryTab.map[type];
+								load(item).then(function(list) {
+									self.endPullUpToRefresh(list.length <= 0);
+								}).catch(function() {
+									self.endPullUpToRefresh();
+								});
+							}
+						}
+					});
+					pull.pullUpLoading();
+				});
+				mui("#typeHeader").on("tap", ".mui-control-item", function() {
+					var index = this.getAttribute("index");
+					if(cache[index]) {
+						return;
+					}
+					cache[index] = true;
+					mui("#" + index + " .mui-scroll-wrapper").imageLazyload({
+						placeholder: 'images/nocover.jpg'
+					});
+				});
+			});
+
+			function loadList(start, gender, category, type) {
+				return new Promise(function(reslove, reject) {
+					mui.ajax("http://api.zhuishushenqi.com/book/by-categories?gender=" + gender + "&type=" + type + "&major=" + decodeURIComponent(category) + "&minor=&limit=50&start=" + start, {
+						dataType: 'json',
+						timeout: 100000,
+						success: function(data) {
+							if(!data.ok) {
+								reject();
+								return;
+							}
+							reslove(data);
+						},
+						error: function() {
+							reject();
+						}
+					});
+
+				})
+			}
+		</script>
+
+	</body>
+
+</html>

@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta http-equiv="Access-Control-Allow-Origin" content="*">
+		<meta http-equiv="content-security-policy">
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<style>
+			#bookContent .content {
+			text-indent: 2em;
+			white-space: pre-wrap;
+			color: #333;
+		}
+
+		.mui-media-object p {
+			margin: 0px;
+		}
+	</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">书籍详情</h1>
+		</header>
+		<div class="mui-card" style="top:40px;">
+			<div class="mui-card-header mui-card-media" style="height: auto;">
+				<img id="bookImg" class="mui-media-object mui-pull-left" src="../images/nocover.jpg" onerror="this.src='../images/nocover.jpg'"
+				 style="width:80px;height: 100px;">
+				<div class="mui-media-object mui-pull-inner" style="margin-left: 100px;">
+					<p id="bookName" style="color: #000000; font-size: 18px;font-weight:Bold;">正在加载</p>
+					<p id="bookAuthor"> 作者：</p>
+					<p id="lastChapter"> 最新章节：</p>
+					<p id="bookTime"> 最近更新：</p>
+				</div>
+				<div class="mui-media-object mui-pull-inner" style="margin-left: 100px;">
+					<button id="insertBook" type="button" class="mui-btn mui-btn-danger">+ 加入追更</button>
+					<button id="startReadBook" type="button" class="mui-btn mui-btn-danger">开始阅读</button>
+				</div>
+			</div>
+			<div class="mui-card-content">
+				<div id="bookContent" class="mui-card-content-inner">
+					<p>内容介绍：</p>
+				</div>
+			</div>
+		</div>
+		<script src="../js/localdata.js"></script>
+		<script src="../js/require.js"></script>
+		<script type="text/javascript">
+			require(["../js/lib.js"], function() {
+				require(["mui", "api"], function(mui, api) {
+					//加载数据
+					function loadContent(novel) {
+						var bookId = novel.href;
+						api.getNovelDetail(bookId).then(function(book) {
+							book.sources = novel.sources;
+							var name = document.getElementById("bookName");
+							var author = document.getElementById("bookAuthor");
+							var lastChapter = document.getElementById("lastChapter");
+							var mtime = document.getElementById("bookTime");
+							var mcontent = document.getElementById("bookContent");
+							var bImg = document.getElementById("bookImg");
+
+							name.innerHTML = book.title;
+							author.innerHTML = "作&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;者：" + book.author;
+							mtime.innerHTML = "更新时间：" + book.updated;
+							lastChapter.innerHTML = "最新章节：" + book.lastChapter;
+							mcontent.innerHTML = book.desc;
+							bImg.setAttribute("src", book.cover);
+							book.id = book.href;
+							var btns = mui(".mui-card");
+							btns.on("tap", "#insertBook", function() {
+								insertMyBook(book);
+							});
+							btns.on("tap", "#startReadBook", function() {
+								startMyBook(book);
+							});
+							store.existBook(book.id).then(function(flag) {
+								if (flag) {
+									var insertBook = document.getElementById("insertBook");
+									insertBook.className = "mui-btn";
+									insertBook.disabled = true;
+									insertBook.innerText = "-已加入追更";
+								}
+							});
+						}).catch(function() {
+							mui.toast("网络连接超时");
+						});
+					}
+
+					//加入追更
+					function insertMyBook(info) {
+						var book = {
+							id: info.href,
+							title: info.title,
+							author: info.author,
+							cover: info.cover,
+							updateTime: formatDate(info.updated),
+							lastChapter: info.lastChapter,
+							chaptersCount: info.chapters ? info.chapters.length : 0,
+							lastRead: new Date().getTime(),
+							sources: info.sources
+						}
+						store.appendBook(book);
+						var insertBook = document.getElementById("insertBook");
+						insertBook.className = "mui-btn";
+						insertBook.disabled = true;
+						insertBook.innerText = "-已加入追更"
+						mui.toast("添加成功");
+						refrushMainView(book);
+					}
+
+					function startMyBook(book) {
+						store.existBook(book.id).then(function(flag) {
+							if (!flag) {
+								insertMyBook(book);
+							}
+						});
+
+						mui.openWindow({
+							id: "readerTxt",
+							url: '../reader/readerTxt.html',
+							extras: {
+								book: book
+							}
+						});
+					}
+
+					function refrushMainView(book) {
+						var detailPage = plus.webview.getWebviewById('bookIndex.html');
+						mui.fire(detailPage, 'addBook', book);
+					}
+
+					mui.init()
+					mui.plusReady(function() {
+						var self = plus.webview.currentWebview();
+						var novel = self.data;
+						loadContent(novel);
+					});
+				})
+			})
+		</script>
+	</body>
+
+</html>

@@ -1,0 +1,703 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<title>Reader</title>
+		<meta http-equiv="Access-Control-Allow-Origin" content="*">
+		<meta http-equiv="content-security-policy">
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<style>
+			html,
+		body,
+		.mui-content {
+			background-color: #BCD1C0;
+		}
+
+		.fixed {
+			position: absolute;
+			left: 0;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			overflow-y: hidden;
+		}
+
+		.mui-off-canvas-left {
+			color: #fff;
+		}
+
+		.title {
+			margin: 35px 15px 10px;
+		}
+
+		.title+.content {
+			margin: 10px 15px 35px;
+			color: #bbb;
+			text-indent: 1em;
+			font-size: 14px;
+			line-height: 24px;
+		}
+
+		#footer a {
+			color: #007aff;
+		}
+		
+		#link {
+			z-index: 110;
+			position: fixed;
+			top: 44px;
+			color: #6d6d72;
+			font-size: 15px;
+			width: 100%;
+			background: #f7f7f7;
+			box-shadow: 0 0 1px rgba(0,0,0,.85);
+			display: none;
+		}
+
+		#downProcess {
+			position: fixed;
+			bottom: 50px;
+			color: #6d6d72;
+			font-size: 15px;
+			width: 100%;
+			background: #f7f7f7;
+			display: none;
+		}
+
+		#downProcess:before {
+			background: #c8c7cc;
+			height: 1px;
+			content: '';
+			position: absolute;
+			top: 0;
+			right: 0;
+			left: 0;
+		}
+	</style>
+	</head>
+
+	<body>
+		<header id="header" class="mui-bar" style="display: none;">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 id="novel_title" class="mui-title"></h1>
+		</header>
+		<div id="link"></div>
+		<div id="main" class="mui-content fixed">
+			<canvas id="txtContent"></canvas>
+		</div>
+		<nav id="footer" class="mui-bar mui-bar-tab" style="display: none;">
+			<a class="mui-tab-item" type="menu">
+				<span class="mui-icon mui-icon-bars"></span>
+				<span class="mui-tab-label">目录</span>
+			</a>
+			<a class="mui-tab-item" type="refresh">
+				<span class="mui-icon mui-icon-reload"></span>
+				<span class="mui-tab-label">刷新</span>
+			</a>
+			<a class="mui-tab-item" type="down">
+				<span class="mui-icon mui-icon-pulldown"></span>
+				<span class="mui-tab-label">下载</span>
+			</a>
+			<a class="mui-tab-item" type="source">
+				<span class="mui-icon mui-icon-location-filled"></span>
+				<span class="mui-tab-label">换源</span>
+			</a>
+		</nav>
+		<div id="downProcess"></div>
+		<script src="../js/jquery-1.9.0.min.js"></script>
+		<script src="../js/mui.js"></script>
+		<script src="../js/localdata.js"></script>
+		<script src="../js/vue.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/config.js"></script>
+		<script type="text/javascript">
+			if (!Promise.prototype.finally) {
+				Promise.prototype.finally = function(callback) {
+					return this.then(function(d) {
+						return callback(d, undefined)
+					}, function(e) {
+						return callback(undefined, e)
+					})
+				}
+			}
+
+			mui.init({
+				beforeback: function() {
+					store.setBookRead(globalObj.book.id, globalObj.index, globalObj.pageIndex);
+					plus.navigator.setFullscreen(false);
+				}
+			});
+
+			var globalFont = "'Helvetica Neue', Helvetica, sans-serif";
+			var sideFont = "Arial";
+			var titleFont = "Arial";
+			var globalObj = {
+				specialChar: "中"
+			};
+			var symbolSet = new Set([",", "\"", "'", "“", "”", "‘", "’", ".", "·", "•"]);
+			var charSet = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "g", "h", "i",
+				"j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "…", "*"
+			]);
+			var letterSet = new Set(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R",
+				"S", "T", "U", "V", "W", "X", "Y", "X"
+			]);
+			var markSet = new Set([".", ",", ";", "?", "？", "!", ":", "\"", "“", "”", "，", "。", "？", "！", "；", "：", "、", "[",
+				"]", "'", "‘", "’", "【", "】", "{", "}"
+			]);
+			var startSet = new Set(["【", "《", "<", "（"]);
+			var endSet = new Set(["，", "。", "！", "》", "？", "】", "；", ":"]);
+
+			mui.plusReady(function() {
+				// plus.navigator.setUserAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36", false);
+
+				function refreshChapters() {
+					var data = {
+						title: globalObj.book.title,
+						chapters: globalObj.chapters,
+						chapterIndex: globalObj.index
+					};
+					mui.fire(chapterPage, "refresh", data);
+				}
+
+				function setChapterIndex(index) {
+					mui.fire(chapterPage, "beforeShow", {
+						chapters: globalObj.chapters,
+						chapterIndex: globalObj.index
+					});
+				}
+
+				function menu(flag) {
+					var display = flag ? "block" : "none";
+					document.getElementById("header").style.display = display;
+					document.getElementById("footer").style.display = display;
+					document.getElementById("link").style.display = display;
+					globalObj.showMenu = flag;
+					if (globalObj.isDown) {
+						document.getElementById("downProcess").style.display = display;
+					}
+				}
+
+				function now() {
+					var date = new Date();
+					return ("0" + date.getHours()).substr(-2) + ":" + ("0" + date.getMinutes()).substr(-2);
+				}
+
+				function fillContext(index) {
+					var ctx = globalObj.ctx,
+						setting = globalObj.setting,
+						xOffset = setting.wordWidth / 3;
+					ctx.clearRect(0, 0, setting.width, setting.height);
+
+					ctx.fillStyle = "#C7EDCC"
+					ctx.fillRect(0, 0, setting.width, setting.height);
+
+					ctx.fillStyle = "#8f8f94";
+					ctx.font = titleFont;
+					ctx.fillText(globalObj.chapter.title, setting.startX, setting.startY);
+
+					ctx.fillStyle = "#393939";
+					ctx.font = globalFont;
+					var pages = globalObj.pages;
+					var lines = index >= pages.length ? pages[pages.length - 1] : pages[index];
+					for (var i = 0; i < lines.length; i++) {
+						var line = lines[i];
+						var x = line.first ? setting.wordWidth * 2 + setting.startX : setting.startX;
+						var y = setting.wordHeight * (i + 0.9) + setting.startY;
+						var w = line.first ? setting.fillWidth - setting.wordWidth * 2 : setting.fillWidth;
+						if (startSet.has(line.text[0])) {
+							x = x - setting.startX;
+						} else if (endSet.has(line.text[line.text.length - 1])) {
+							w += setting.startX;
+						}
+						ctx.fillText(line.text, x, y, w);
+					}
+					globalObj.pageIndex = index;
+					ctx.fillStyle = "#8f8f94";
+					ctx.font = sideFont;
+					ctx.fillText((index + 1) + "/" + pages.length, setting.startX, setting.bottomY);
+					ctx.fillText(now(), setting.timeStartX, setting.bottomY);
+				}
+
+				function setContent(content) {
+					var setting = globalObj.setting;
+					var pages = [],
+						lines = [];
+					var strs = content.split(/\r|\n/);
+					for (var i = 0; i < strs.length; i++) {
+						if (!strs[i]) {
+							continue;
+						}
+						var txt = strs[i];
+						var j = 0;
+						while (j < txt.length) {
+							var length = j == 0 ? setting.lineWordSize - 2 : setting.lineWordSize;
+							var end = j;
+							while (length > 0 && end < txt.length) {
+								var c = txt[end];
+								if (symbolSet.has(c)) {
+									length -= 0.25;
+								} else if (charSet.has(c)) {
+									length -= 0.5;
+								} else if (letterSet.has(c)) {
+									length -= 0.75;
+								} else {
+									length--;
+								}
+								end++
+								if (length < 0.5) {
+									break;
+								}
+							}
+							while (end < txt.length && markSet.has(txt[end])) {
+								end++;
+							}
+							var part = txt.substring(j, end);
+							var line = {
+								text: part
+							};
+							if (j == 0) {
+								line.first = true;
+							}
+							lines.push(line);
+							if (lines.length == setting.lineSize) {
+								pages.push(lines);
+								lines = [];
+							}
+							j += part.length;
+						}
+					}
+					if (lines.length > 0) {
+						pages.push(lines);
+					}
+					globalObj.pages = pages;
+					var index = globalObj.pageIndex ? globalObj.pageIndex : 0;
+					if (globalObj.pageIndex == -1) {
+						index = pages.length - 1;
+					}
+					document.getElementById("link").innerText = globalObj.chapter.link;
+					fillContext(index);
+					setChapterIndex(globalObj.index);
+				}
+
+				function loadRemoteContent(book, chapter, loading) {
+					var link = chapter.link + "?_=" + Math.random();
+					if (loading) {
+						plus.nativeUI.showWaiting("加载中");
+					}
+					return new Promise(function(reslove, reject) {
+						mui.ajax(link, {
+							dataType: 'html',
+							timeout: 100000,
+							success: function(html) {
+								var doc = $(html);
+								var images = doc.find("img");
+								$.each(images, function(i, img) {
+									$(img).attr("onerror", "");
+								});
+								site = sites.findSite(link);
+								var contents = doc.find(site.content).contents(site.contentFilter)
+								var lines = [];
+								$.each(contents, function(i, ctn) {
+									var line = $.trim($(ctn).text());
+									if (!line) {
+										return;
+									}
+									lines.push(line);
+								});
+								var txt = lines.join("\n");
+								store.saveChapter(book.id, chapter.link, txt);
+								reslove(txt);
+							},
+							complete: function() {
+								if (loading) {
+									plus.nativeUI.closeWaiting();
+								}
+							},
+							error: function() {
+								reject(arguments);
+							}
+						});
+					});
+				}
+
+				//加载内容
+				function loadContent(book, chapters, index, page, loading) {
+					var isEnter = isNaN(index);
+					return new Promise(function(reslove, reject) {
+						var recordFuture = new Promise(function(success) {
+							if (!isEnter) {
+								if (isNaN(index)) {
+									index = 0;
+									page = 0;
+								}
+								success();
+							} else {
+								store.getBookRead(book.id).then(function(record) {
+									if (record) {
+										index = record.index;
+										page = record.page;
+									}
+									success();
+								});
+							}
+						});
+						recordFuture.then(function() {
+							var chapter = globalObj.chapter = chapters[index];
+							if (globalObj[index]) {
+								var txt = globalObj[index];
+								globalObj.index = index;
+								globalObj.pageIndex = page;
+								setContent(txt);
+								globalObj.indexPage = globalObj.indexPage || plus.webview.getLaunchWebview();
+								store.setBookRead(book.id, index, page);
+								reslove(txt);
+							} else {
+								store.getChapter(book.id, chapter.link).then(function(txt) {
+									start = new Date().getTime();
+									globalObj.index = index;
+									globalObj.pageIndex = page;
+									globalObj[index] = txt;
+									setContent(txt);
+									store.setBookRead(book.id, index, page);
+									reslove(txt);
+								}).catch(function() {
+									if (loading && !isEnter) {
+										plus.nativeUI.showWaiting("加载中");
+									}
+									loadRemoteContent(book, chapter).then(function(txt) {
+										globalObj.index = index;
+										globalObj.pageIndex = page;
+										globalObj[index] = txt;
+										setContent(txt);
+										store.setBookRead(book.id, index, page);
+										reslove(txt);
+									}).catch(function() {
+										console.log(JSON.stringify(arguments));
+										reject(arguments);
+									}).finally(function() {
+										if (loading && !isEnter) {
+											plus.nativeUI.closeWaiting();
+										}
+									});
+								});
+							}
+						});
+					});
+				}
+
+				function loadContentToCache(book, chapters, index, rIndex) {
+					return new Promise(function(reslove, reject) {
+						if (index <= 0 || index > chapters.length - 1 || globalObj[index]) {
+							reslove();
+							return;
+						}
+						var chapter = chapters[index];
+						setTimeout(function() {
+							store.getChapter(book.id, chapter.link).then(function(txt) {
+								globalObj[index] = txt;
+								delete globalObj[rIndex];
+								reslove();
+							}).catch(function() {
+								loadRemoteContent(book, chapter).then(function(txt) {
+									globalObj[index] = txt;
+									delete globalObj[rIndex];
+									reslove();
+								}).catch(reject);
+							});
+						}, 15);
+					});
+				}
+
+				//加载章节目录
+				function loadChapters(book) {
+					plus.nativeUI.showWaiting("加载中");
+
+					var title = document.getElementById("novel_title");
+					title.innerHTML = book.title;
+
+					var contentFuture;
+					store.getBookChapters(book.id).then(function(chapters) {
+						if (chapters.length > 0) {
+							globalObj.chapters = chapters;
+							contentFuture = loadContent(book, chapters);
+						}
+					}).finally(function() {
+						var chapterFuture = new Promise(function(reslove, reject) {
+							var chapters = globalObj.chapters;
+							var url = book.id;
+							mui.ajax(url, {
+								dataType: 'html',
+								type: "get",
+								timeout: 100000,
+								success: function(html) {
+									var host = site.host; //url.match(/(^(http:||https:)\/\/.+?)\//)[1];
+									var doc = $(html);
+									var images = doc.find("img");
+									$.each(images, function(i, img) {
+										$(img).attr("onerror", "");
+									});
+									var newChapters = [];
+									var list = doc.find(site.chapter);
+									$.each(list, function(i, ele) {
+										var $ele = $(ele);
+										var href = $ele.attr("href");
+										newChapters.push({
+											link: href.startsWith("/") ? host + href : (href.startsWith("http://") || href.startsWith(
+												"https://") ? href : url + href),
+											title: $ele.text()
+										});
+									});
+									var older = chapters;
+									chapters = newChapters;
+									var stores = [];
+									for (var i = 0; i < chapters.length; i++) {
+										var chapter = chapters[i];
+										stores.push({
+											title: chapter.title,
+											link: chapter.link
+										});
+									}
+									chapters = stores;
+									if (!older || older.length != chapters.length || older[0].link != chapters[0].link) {
+										store.saveBookChapters(book.id, chapters);
+									}
+									globalObj.chapters = chapters;
+									if (!contentFuture) {
+										loadContent(book, chapters).then(function() {
+											reslove(chapters);
+										}).catch(function() {
+											reslove(chapters);
+										});
+									} else {
+										reslove(chapters);
+									}
+								},
+								complete: function() {
+									refreshChapters();
+								},
+								error: function() {
+									if (chapters && chapters.length > 0) {
+										reslove(chapters);
+									} else {
+										reject();
+									}
+								}
+							});
+						});
+						var completeFuture;
+						if (contentFuture) {
+							completeFuture = Promise.all([contentFuture, chapterFuture])
+						} else {
+							completeFuture = chapterFuture
+						}
+						completeFuture.then(function() {
+							var index = globalObj.index;
+							var nextFuture = loadContentToCache(book, globalObj.chapters, index + 1);
+							var preFuture = loadContentToCache(book, globalObj.chapters, index - 1);
+							Promise.all([nextFuture, preFuture]).finally(function() {
+								plus.nativeUI.closeWaiting();
+							});
+						}).catch(function() {
+							plus.nativeUI.closeWaiting();
+						});
+					});
+				}
+
+				function downContent(book, downQueue, downProcess, total) {
+					if (downQueue.length <= 0) {
+						downProcess.innerText = "下载进度：完成";
+						mui.toast("下载完成");
+						return;
+					}
+					var chapter = downQueue.shift();
+					store.existsChapter(book.id, chapter.link).then(function(flag) {
+						if (flag) {
+							downProcess.innerText = "下载进度：" + (total - downQueue.length) + "/" + total;
+							downContent(book, downQueue, downProcess, total);
+						} else {
+							setTimeout(function() {
+								loadRemoteContent(book, chapter).then(function(txt) {
+									downProcess.innerText = "下载进度：" + (total - downQueue.length) + "/" + total;
+								}).catch(function() {
+									if (chapter.retry) {
+										return;
+									}
+									chapter.retry = true;
+									downQueue.push(chapter);
+								}).finally(function() {
+									downContent(book, downQueue, downProcess, total);
+								});
+							}, 150 * Math.random());
+						}
+					});
+				}
+
+				function getCanvanSetting(ctx) {
+
+					function getPixelRatio(context) {
+						var backingStore = context.backingStorePixelRatio ||
+							context.webkitBackingStorePixelRatio ||
+							context.mozBackingStorePixelRatio ||
+							context.msBackingStorePixelRatio ||
+							context.oBackingStorePixelRatio ||
+							context.backingStorePixelRatio || 1;
+						return (window.devicePixelRatio || 1) / backingStore;
+					}
+
+					var width = screen.width;
+					var height = screen.height;
+
+					var ratio = getPixelRatio(ctx);
+					globalFont = (18 * ratio) + "px " + globalFont;
+					sideFont = (13 * ratio) + "px " + sideFont;
+					titleFont = (14 * ratio) + "px " + titleFont;
+
+					ctx.font = globalFont;
+					var wordWidth = ctx.measureText(globalObj.specialChar).width;
+					ctx.font = sideFont;
+					var timeWidth = ctx.measureText("00:00").width;
+
+					var lineCount = (height - 20) / 30;
+					var res = {
+						ratio: ratio,
+						showWidth: width,
+						showHeight: height,
+						width: parseInt(width * ratio),
+						height: parseInt(height * ratio),
+						wordWidth: parseInt(wordWidth),
+						wordHeight: parseInt(30 * ratio),
+						timeWidth: timeWidth
+					};
+					res.startX = res.wordWidth / 2;
+					res.startY = res.wordHeight * 0.75;
+					res.bottomY = res.height - (res.wordHeight * 0.25);
+					res.fillWidth = res.width - res.wordWidth;
+					res.fillHeight = res.height - res.wordHeight;
+					res.lineWordSize = Math.floor((res.fillWidth / res.wordWidth));
+					res.lineSize = parseInt(res.fillHeight / res.wordHeight);
+					res.timeStartX = res.width - res.startX - res.timeWidth;
+					return res;
+				};
+				(function createCanvas(globalObj) {
+					var canvas = document.getElementById("txtContent");
+					var ctx = globalObj.ctx || canvas.getContext("2d");
+					var setting = globalObj.setting = getCanvanSetting(ctx);
+
+					canvas.height = setting.height;
+					canvas.width = setting.width;
+					var style = "width:" + setting.showWidth + "px;heigth:" + setting.showWidth + "px";
+					canvas.style = style;
+
+					globalObj.ctx = ctx;
+					canvas.addEventListener("click", function(e) {
+						if (globalObj.showMenu) {
+							menu(false);
+							return;
+						}
+
+						var index = globalObj.index;
+						var chapters = globalObj.chapters;
+						var pageIndex = globalObj.pageIndex;
+						var pages = globalObj.pages;
+
+						var ctx = globalObj.ctx;
+						var mW = setting.width / (setting.ratio * 2);
+
+						var pos = e;
+						if (pos.clientX > mW + 40) {
+							if (pageIndex >= pages.length - 1) {
+								if (index >= chapters.length - 1) {
+									plus.nativeUI.toast("这是最后一页！");
+									return;
+								}
+								loadContent(globalObj.book, chapters, index + 1, 0, true);
+								loadContentToCache(globalObj.book, chapters, index + 2, index - 1);
+								return;
+							}
+							pageIndex++;
+						} else if (pos.clientX < mW - 40) {
+							if (pageIndex <= 0) {
+								if (index > 0) {
+									globalObj.pageIndex = -1;
+									loadContent(globalObj.book, chapters, index - 1, -1, true);
+									loadContentToCache(globalObj.book, chapters, index - 2, index + 1);
+								} else {
+									plus.nativeUI.toast("这是第一页");
+								}
+								return;
+							}
+							pageIndex--;
+						} else {
+							menu(true);
+							return;
+						}
+						fillContext(pageIndex);
+					});
+				})(globalObj);
+
+				var chapterPage = mui.preload({
+					url: 'chapter.html'
+				});
+				var sourcePage = mui.preload({
+					url: "source.html"
+				});
+
+				plus.navigator.setFullscreen(true);
+
+				var list = plus.webview.getWebviewById("bookIndex.html");
+				mui.fire(list, 'moveTop');
+				var self = plus.webview.currentWebview();
+				var book = globalObj.book = self.book;
+				var site = sites.findSite(book.id);
+				loadChapters(book);
+
+				mui("#footer").on('tap', 'a', function() {
+					var type = this.getAttribute("type");
+					if (type == "menu") {
+						mui.fire(chapterPage, "beforeShow", {
+							chapters: globalObj.chapters,
+							chapterIndex: globalObj.index
+						});
+						chapterPage.show();
+					} else if (type == "down") {
+						globalObj.isDown = true;
+						var downQueue = globalObj.chapters.slice();
+						var downProcess = document.getElementById("downProcess");
+						downProcess.innerText = "下载进度：开始下载";
+						downProcess.style.display = "block";
+						downContent(globalObj.book, downQueue, downProcess, downQueue.length);
+					} else if (type == "refresh") {
+						var chapter = globalObj.chapters[globalObj.index];
+						loadRemoteContent(book, chapter, true).then(function(txt) {
+							globalObj.pageIndex = 0;
+							setContent(txt);
+							store.setBookRead(book.id, globalObj.index, 0);
+						})
+						menu(false);
+					} else if (type == "source") {
+						mui.fire(sourcePage, "beforeShow", book.sources);
+						sourcePage.show();
+					}
+				})
+
+				window.addEventListener("loadContent", function(e) {
+					plus.nativeUI.showWaiting("加载中")
+					menu(false);
+					var info = e.detail;
+					globalObj.chapters = info.chapters;
+					var curFuture = loadContent(book, globalObj.chapters, info.chapterIndex, 0, false);
+					var nextFuture = loadContentToCache(book, globalObj.chapters, info.chapterIndex + 1);
+					var preFuture = loadContentToCache(book, globalObj.chapters, info.chapterIndex - 1);
+					Promise.all([curFuture, nextFuture, preFuture]).finally(function() {
+						plus.nativeUI.closeWaiting();
+					})
+				});
+			});
+		</script>
+	</body>
+
+</html>
