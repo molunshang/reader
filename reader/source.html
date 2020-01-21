@@ -56,7 +56,7 @@
 							methods: {
 								changeSource: function(source) {
 									chapter = chapter || plus.webview.getWebviewById("chapter.html");
-									mui.fire(chapter, "changeSource", source.chapters);
+									mui.fire(chapter, "changeSource", source);
 									chapter.show();
 								}
 							}
@@ -76,7 +76,7 @@
 										tasks.push(api.getNovelDetail(source).then(function(book) {
 											sourceCache[source] = book;
 											return book;
-										}));
+										}).catch(console.log));
 									}
 								})(source);
 							}

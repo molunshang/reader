@@ -147,11 +147,12 @@
 						this.index = index;
 						var book = this.items[index];
 						mui.openWindow({
-							id:"readerTxt",
+							id: "readerTxt",
 							url: 'reader/readerTxt.html',
 							extras: {
 								book: {
 									id: book.id,
+									href: book.href || book.id,
 									title: book.title,
 									sources: book.sources
 								}
@@ -215,12 +216,15 @@
 					return;
 				}
 				var item = list.items[index];
-				mui.ajax(item.id, {
+				if (!item.href) {
+					item.href = item.id;
+				}
+				mui.ajax(item.href, {
 					dataType: 'html',
 					type: 'get',
 					timeout: 10000,
 					success: function(html) {
-						var site = sites.findSite(item.id);
+						var site = sites.findSite(item.href);
 						var doc = $($.trim(html));
 						var images = doc.find("img");
 						$.each(images, function(i, img) {
@@ -248,14 +252,6 @@
 						setTimeout(function() {
 							checkUpdate(index + 1, changeSize, saveUpdate);
 						}, 100);
-						// if (changeSize > 0) {
-						// 	list.$nextTick(function() {
-						// 		mui.toast("小说已更新");
-						// 	});
-						// } else {
-						// 	mui.toast("似乎已断开与互联网的连接");
-						// }
-						// refreshApi.endPulldown();
 					}
 				});
 			}
@@ -311,6 +307,11 @@
 				}
 				var index = list.index;
 				var book = list.items[index];
+				if (e && e.detail) {
+					book.href = e.detail.href;
+				} else {
+					book.href = book.id;
+				}
 				book.lastRead = new Date().getTime();
 				book.hasNew = false;
 				list.items.splice(index, 1);

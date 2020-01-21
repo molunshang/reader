@@ -42,6 +42,7 @@
 				el: '#menuBody',
 				data: {
 					title: "",
+					href: "",
 					chapters: [],
 					chapterIndex: 0
 				},
@@ -51,7 +52,8 @@
 						readerTxt = readerTxt || plus.webview.getWebviewById("readerTxt");
 						mui.fire(readerTxt, "loadContent", {
 							chapterIndex: index,
-							chapters: this.chapters
+							chapters: this.chapters,
+							href: this.href
 						});
 						var sourcePage = plus.webview.getWebviewById("source.html");
 						if (sourcePage) {
@@ -85,6 +87,7 @@
 				var info = e.detail;
 				menu.chapterIndex = info.chapterIndex;
 				menu.title = info.title;
+				menu.href = info.href;
 				menu.chapters = info.chapters;
 				menu.$nextTick(function() {
 					var current = mui(".mui-active");
@@ -98,9 +101,10 @@
 				if (!e.detail) {
 					return;
 				}
-				var chapters = e.detail;
+				var source = e.detail;
 				menu.chapterIndex = -1;
-				menu.chapters = chapters;
+				menu.chapters = source.chapters;
+				menu.href = source.href;
 			});
 		</script>
 	</body>

@@ -102,33 +102,6 @@ var sites = [{
 	chapter: "#list a",
 	content: "#content"
 }, {
-	name: "510文学",
-	host: "https://www.510wx.com",
-	searchUrl: "https://www.510wx.com/plus/search.php?kwtype=0&searchtype=&q=",
-	item: ".ul_b_list li",
-	cover: "img",
-	title: "h2 a",
-	author: ".words .state a:first",
-	updateTime: {
-		type: "regex",
-		regex: /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/
-	},
-	listChapter: null,
-	detail: "a",
-	desc: ".words p:nth-of-type(3)",
-	detailTitle: ".title h1",
-	detailAuthor: ".info li:first a",
-	detailUpdated: {
-		css: ".words",
-		regex: /\d{4}-\d{2}-\d{2} \d{2}:\d{2}/
-	},
-	detailCover: ".pic .lazy:first",
-	lastChapter: ".words a:first",
-	detailDesc: ".words p:last",
-	chapter: ".list_box a",
-	content: ".box_box",
-	contentFilter: ":not(script)"
-}, {
 	name: "第一版主",
 	host: "http://www.banzhuwang.org/",
 	searchUrl: "http://www.banzhuwang.org/modules/article/search.php",
@@ -157,6 +130,35 @@ var sites = [{
 	detailDesc: ".introduce .jj",
 	chapter: ".ml_list li a",
 	content: ".articlecontent",
+	contentFilter: null
+}, {
+	name: "笔下文学",
+	host: "https://www.bxwxorg.com",
+	searchUrl: "https://www.bxwxorg.com/search.html",
+	isPost: true,
+	paramName: "searchkey",
+	item: "#sitembox dl",
+	cover: "img",
+	title: "h3",
+	author: ".book_other span:nth-child(1)",
+	updateTime: {
+		type: "css",
+		css: ".book_other:nth-child(5) span"
+	},
+	listChapter: ".book_other:nth-child(5) a",
+	detail: "h3 a",
+	desc: ".book_des",
+	detailTitle: "#info h1",
+	detailAuthor: "#info p a:nth-child(1)",
+	detailUpdated: {
+		css: "#info p:nth-child(4)",
+		regex: /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/
+	},
+	detailCover: "#fmimg img",
+	lastChapter: "#info p:nth-child(5) a",
+	detailDesc: "#intro p:nth-child(1)",
+	chapter: "#list dt:nth-of-type(2 )~ dd a",
+	content: "#content p",
 	contentFilter: null
 }];
 

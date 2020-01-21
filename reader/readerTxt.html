@@ -293,7 +293,7 @@
 							dataType: 'html',
 							timeout: 100000,
 							success: function(html) {
-								var doc = $(html);
+								var doc = $($.trim(html));
 								var images = doc.find("img");
 								$.each(images, function(i, img) {
 									$(img).attr("onerror", "");
@@ -338,8 +338,8 @@
 							} else {
 								store.getBookRead(book.id).then(function(record) {
 									if (record) {
-										index = record.index;
-										page = record.page;
+										index = record.index || 0;
+										page = record.page || 0;
 									}
 									success();
 								});
@@ -428,14 +428,14 @@
 					}).finally(function() {
 						var chapterFuture = new Promise(function(reslove, reject) {
 							var chapters = globalObj.chapters;
-							var url = book.id;
+							var url = book.href;
 							mui.ajax(url, {
 								dataType: 'html',
 								type: "get",
-								timeout: 100000,
+								timeout: 10000,
 								success: function(html) {
 									var host = site.host; //url.match(/(^(http:||https:)\/\/.+?)\//)[1];
-									var doc = $(html);
+									var doc = $($.trim(html));
 									var images = doc.find("img");
 									$.each(images, function(i, img) {
 										$(img).attr("onerror", "");
@@ -652,15 +652,15 @@
 				mui.fire(list, 'moveTop');
 				var self = plus.webview.currentWebview();
 				var book = globalObj.book = self.book;
-				var site = sites.findSite(book.id);
+				var site = sites.findSite(book.href);
 				loadChapters(book);
-
 				mui("#footer").on('tap', 'a', function() {
 					var type = this.getAttribute("type");
 					if (type == "menu") {
 						mui.fire(chapterPage, "beforeShow", {
 							chapters: globalObj.chapters,
-							chapterIndex: globalObj.index
+							chapterIndex: globalObj.index,
+							href: book.href
 						});
 						chapterPage.show();
 					} else if (type == "down") {
@@ -688,7 +688,14 @@
 					plus.nativeUI.showWaiting("加载中")
 					menu(false);
 					var info = e.detail;
-					globalObj.chapters = info.chapters;
+					if (book.href != info.href) {
+						mui.fire(list, 'moveTop', {
+							href: info.href
+						});
+						globalObj.chapters = info.chapters;
+						store.saveBookChapters(book.id, globalObj.chapters);
+						book.href = info.href;
+					}
 					var curFuture = loadContent(book, globalObj.chapters, info.chapterIndex, 0, false);
 					var nextFuture = loadContentToCache(book, globalObj.chapters, info.chapterIndex + 1);
 					var preFuture = loadContentToCache(book, globalObj.chapters, info.chapterIndex - 1);
