@@ -1,7 +1,7 @@
 var sites = [{
 	name: "笔趣阁",
 	host: "https://www.biduo.cc",
-	searchUrl: "https://www.biduo.cc/search.php?keyword=",
+	searchUrl: "https://www.biduo.cc/search.php?q=",
 	item: ".result-item",
 	cover: "img",
 	title: "h3",
@@ -26,7 +26,7 @@ var sites = [{
 }, {
 	name: "笔趣阁",
 	host: "https://www.biqubao.com",
-	searchUrl: "https://www.biqubao.com/search.php?keyword=",
+	searchUrl: "https://www.biqubao.com/search.php?q=",
 	item: ".result-item",
 	cover: "img",
 	title: "h3",
@@ -52,7 +52,7 @@ var sites = [{
 }, {
 	name: "笔趣阁",
 	host: "https://www.biquge.com.cn",
-	searchUrl: "https://www.biquge.com.cn/search.php?keyword=",
+	searchUrl: "https://www.biquge.com.cn/search.php?q=",
 	item: ".result-item",
 	cover: "img",
 	title: "h3",
@@ -133,9 +133,9 @@ var sites = [{
 	contentFilter: null
 }, {
 	name: "笔下文学",
-	host: "https://www.bxwxorg.com",
-	searchUrl: "https://www.bxwxorg.com/search.html",
-	isPost: true,
+	host: "https://www.bxwx66.com",
+	searchUrl: "https://www.bxwx66.com/search.html",
+	isPost: true,	
 	paramName: "searchkey",
 	item: "#sitembox dl",
 	cover: "img",
@@ -149,7 +149,7 @@ var sites = [{
 	detail: "h3 a",
 	desc: ".book_des",
 	detailTitle: "#info h1",
-	detailAuthor: "#info p a:nth-child(1)",
+	detailAuthor: "#info p:nth-child(2) a",
 	detailUpdated: {
 		css: "#info p:nth-child(4)",
 		regex: /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/

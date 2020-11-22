@@ -35,7 +35,7 @@
 		</header>
 		<div class="mui-content" style="margin-top:-15px;width: 100%;">
 			<div class="mui-card" style="left: -10px; width: 100%;">
-				<ul id="novels" class="mui-table-view ref">
+				<ul id="novels" class="mui-table-view ref" style="display: none;">
 					<li class="mui-table-view-divider" v-if="noResult"><a>{{searchNovel}}</a>搜索结果（ 共搜索到 <a> 0 </a>条相关数据）</li>
 					<li class="mui-table-view-cell" v-for="(item,index) in items" v-on:click="detail(index)">
 						<a href="javascript:void(0)">
@@ -77,6 +77,7 @@
 									}
 								}
 							});
+							document.getElementById("novels").style.display = "block";
 							mui.init();
 							mui.plusReady(function() {
 								var self = plus.webview.currentWebview();

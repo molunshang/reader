@@ -56,8 +56,7 @@
 				require(["mui", "api"], function(mui, api) {
 					//加载数据
 					function loadContent(novel) {
-						var bookId = novel.href;
-						api.getNovelDetail(bookId).then(function(book) {
+						function complete(book) {
 							book.sources = novel.sources;
 							var name = document.getElementById("bookName");
 							var author = document.getElementById("bookAuthor");
@@ -68,11 +67,11 @@
 
 							name.innerHTML = book.title;
 							author.innerHTML = "作&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;者：" + book.author;
-							mtime.innerHTML = "更新时间：" + book.updated;
+							mtime.innerHTML = "更新时间：" + book.updateTime;
 							lastChapter.innerHTML = "最新章节：" + book.lastChapter;
 							mcontent.innerHTML = book.desc;
 							bImg.setAttribute("src", book.cover);
-							book.id = book.href;
+							book.id = book.title + "||" + book.author;
 							var btns = mui(".mui-card");
 							btns.on("tap", "#insertBook", function() {
 								insertMyBook(book);
@@ -88,25 +87,41 @@
 									insertBook.innerText = "-已加入追更";
 								}
 							});
-						}).catch(function() {
-							console.log(JSON.stringify(arguments));
-							mui.toast("网络连接超时");
-						});
+						}
+						var fields = ["title", "author", "cover", "desc", "updateTime", "lastChapter"];
+						var remote = false;
+						for (var i = 0; i < fields.length; i++) {
+							if (!novel[fields[i]]) {
+								remote = true;
+								break;
+							}
+						}
+						if (remote) {
+							var bookId = novel.href;
+							api.getNovelDetail(bookId).then(complete).catch(function() {
+								mui.toast("网络连接超时");
+							});
+						} else {
+							complete(novel);
+						}
 					}
-					
+
+
 					//加入追更
 					function insertMyBook(info) {
 						var book = {
-							id: info.href,
+							id: info.id,
+							href: info.href,
 							title: info.title,
 							author: info.author,
 							cover: info.cover,
-							updateTime: formatDate(info.updated),
+							updateTime: formatDate(info.updateTime),
 							lastChapter: info.lastChapter,
 							chaptersCount: info.chapters ? info.chapters.length : 0,
 							lastRead: new Date().getTime(),
 							sources: info.sources
 						}
+						console.log(JSON.stringify(book));
 						store.appendBook(book);
 						var insertBook = document.getElementById("insertBook");
 						insertBook.className = "mui-btn";

@@ -2,7 +2,7 @@ var store = {};
 document.addEventListener("plusready", function() {
 	store.saveObj = function(key, obj) {
 		return new Promise(function(reslove, reject) {
-			if(!obj) {
+			if (!obj) {
 				reject();
 				return;
 			}
@@ -43,7 +43,7 @@ document.addEventListener("plusready", function() {
 						entry.file(function(file) {
 							var reader = new plus.io.FileReader();
 							reader.onload = function(e) {
-								if(e.target.result) {
+								if (e.target.result) {
 									reslove(JSON.parse(e.target.result));
 								} else {
 									reslove();
@@ -77,15 +77,15 @@ document.addEventListener("plusready", function() {
 		return new Promise(function(reslove, reject) {
 			var bookList = [];
 			store.getObj("bookList").then(function(ids) {
-				if(!ids || ids.length == 0) {
+				if (!ids || ids.length == 0) {
 					reslove(bookList);
 					return;
 				}
 				var futures = [];
-				for(var i = 0; i < ids.length; i++) {
+				for (var i = 0; i < ids.length; i++) {
 					var detail = (function(id) {
 						return store.getBook(id).then(function(book) {
-							if(!book) {
+							if (!book) {
 								return;
 							}
 							bookList.push(book);
@@ -97,10 +97,10 @@ document.addEventListener("plusready", function() {
 					console.log(JSON.stringify(arguments));
 				}).finally(function() {
 					bookList.sort(function(f, t) {
-						if(t.lastRead && f.lastRead) {
+						if (t.lastRead && f.lastRead) {
 							return t.lastRead - f.lastRead;
 						}
-						if(f.lastRead) {
+						if (f.lastRead) {
 							return -1;
 						}
 						return 1;
@@ -135,11 +135,11 @@ document.addEventListener("plusready", function() {
 
 	store.appendBook = function(book) {
 		store.getObj("bookList").then(function(ids) {
-			if(!ids) {
+			if (!ids) {
 				ids = [];
 			}
 			var set = new Set(ids);
-			if(set.has(book.id)) {
+			if (set.has(book.id)) {
 				return;
 			}
 			ids.push(book.id);
@@ -155,7 +155,7 @@ document.addEventListener("plusready", function() {
 	store.getBookRead = function(bookId) {
 		return new Promise(function(reslove) {
 			store.getObj("book:read:" + bookId).then(function(obj) {
-				if(!obj) {
+				if (!obj) {
 					obj = {
 						index: 0,
 						page: 0
@@ -222,7 +222,7 @@ document.addEventListener("plusready", function() {
 						entry.file(function(file) {
 							var reader = new plus.io.FileReader();
 							reader.onload = function(e) {
-								if(e.target.result) {
+								if (e.target.result) {
 									reslove(e.target.result);
 								} else {
 									reject();
@@ -276,11 +276,11 @@ document.addEventListener("plusready", function() {
 			})
 		});
 		store.getObj("bookList").then(function(ids) {
-			if(!ids) {
+			if (!ids) {
 				return;
 			}
 			var index = ids.indexOf(bookId);
-			if(index >= 0) {
+			if (index >= 0) {
 				ids.splice(index, 1);
 				store.saveObj("bookList", ids);
 			}

@@ -434,7 +434,7 @@
 								type: "get",
 								timeout: 10000,
 								success: function(html) {
-									var host = site.host; //url.match(/(^(http:||https:)\/\/.+?)\//)[1];
+									var host = site.host;
 									var doc = $($.trim(html));
 									var images = doc.find("img");
 									$.each(images, function(i, img) {
@@ -674,6 +674,7 @@
 						var chapter = globalObj.chapters[globalObj.index];
 						loadRemoteContent(book, chapter, true).then(function(txt) {
 							globalObj.pageIndex = 0;
+							globalObj[globalObj.index] = txt;
 							setContent(txt);
 							store.setBookRead(book.id, globalObj.index, 0);
 						})
@@ -688,12 +689,16 @@
 					plus.nativeUI.showWaiting("加载中")
 					menu(false);
 					var info = e.detail;
-					if (book.href != info.href) {
+					if (info.href && book.href != info.href) {
 						mui.fire(list, 'moveTop', {
 							href: info.href
 						});
+						var index = info.chapterIndex;
+						delete globalObj[index];
+						delete globalObj[index - 1];
+						delete globalObj[index + 1];
 						globalObj.chapters = info.chapters;
-						store.saveBookChapters(book.id, globalObj.chapters);
+						store.saveBookChapters(book.id, info.chapters);
 						book.href = info.href;
 					}
 					var curFuture = loadContent(book, globalObj.chapters, info.chapterIndex, 0, false);

@@ -71,7 +71,7 @@ define(["mui", "jquery", "siteconfig", "common", "gbk", "linqjs"], function(mui,
 		var updateStr = doc.find(site.detailUpdated.css).text();
 		var updated = updateStr.match(site.detailUpdated.regex);
 		if (updated) {
-			book.updated = updated[0];
+			book.updateTime = updated[0];
 		}
 		var lines = doc.find(site.detailDesc).contents();
 		var content = new StringBuilder();
@@ -108,6 +108,7 @@ define(["mui", "jquery", "siteconfig", "common", "gbk", "linqjs"], function(mui,
 					return;
 				}
 				var book = api.parseDetail(doc, site);
+				book.href = url;
 				success(book);
 			}).catch(fail);
 		});

@@ -152,7 +152,7 @@
 							extras: {
 								book: {
 									id: book.id,
-									href: book.href || book.id,
+									href: book.href,
 									title: book.title,
 									sources: book.sources
 								}
@@ -216,9 +216,6 @@
 					return;
 				}
 				var item = list.items[index];
-				if (!item.href) {
-					item.href = item.id;
-				}
 				mui.ajax(item.href, {
 					dataType: 'html',
 					type: 'get',
@@ -307,17 +304,16 @@
 				}
 				var index = list.index;
 				var book = list.items[index];
-				if (e && e.detail) {
+				if (e && e.detail && e.detail.href) {
 					book.href = e.detail.href;
-				} else {
-					book.href = book.id;
 				}
 				book.lastRead = new Date().getTime();
 				book.hasNew = false;
 				list.items.splice(index, 1);
 				list.items.unshift(book);
-				store.saveBook(book);
 				list.index = 0;
+				store.saveBook(book);
+				console.log(JSON.stringify(book));
 			});
 		</script>
 	</body>
