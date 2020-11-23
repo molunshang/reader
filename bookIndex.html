@@ -260,12 +260,12 @@
 
 				function saveUpdate(before, after) {
 					var hasNew = before.hasNew;
-					var hasChange = before.chaptersCount < after.chaptersCount || before.lastChapter != after.lastChapter;
+					var hasChange = before.chaptersCount < after.chaptersCount;
 					before.updateTime = formatDate(after.updated);
-					before.hasNew = hasChange || before.lastRead < new Date(after.updated).getTime();
+					before.hasNew = hasChange || before.lastRead < new Date(before.updateTime).getTime();
 					before.lastChapter = after.lastChapter;
 					before.chaptersCount = after.chaptersCount;
-					if (hasChange || hasNew != before.hasNew) {
+					if (hasChange) {
 						store.saveBook(before);
 						return true;
 					}
@@ -313,7 +313,6 @@
 				list.items.unshift(book);
 				list.index = 0;
 				store.saveBook(book);
-				console.log(JSON.stringify(book));
 			});
 		</script>
 	</body>
