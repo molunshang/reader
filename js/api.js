@@ -1,4 +1,5 @@
-define(["mui", "jquery", "siteconfig", "common", "gbk", "linqjs"], function(mui, $, siteconfig, common, GBK, Enumerable) {
+define(["mui", "jquery", "siteconfig", "common", "gbk", "linqjs", "store"], function(mui, $, siteconfig, common, GBK,
+	Enumerable, store) {
 	function ajax(url, option, resolve, reject) {
 		var info = {
 			dataType: 'html',
@@ -50,8 +51,6 @@ define(["mui", "jquery", "siteconfig", "common", "gbk", "linqjs"], function(mui,
 			})
 		}
 	};
-	// api.deleteAllCookies =
-	// 	'<script type="text/javascript">var cookies = document.cookie.split(";");for (var i = 0; i < cookies.length; i++) {var cookie = cookies[i];var eqPos = cookie.indexOf("=");var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT";}</scprit>';
 	api.parseDetail = function(doc, site) {
 		var url = doc.url;
 		var book = {
@@ -137,6 +136,9 @@ define(["mui", "jquery", "siteconfig", "common", "gbk", "linqjs"], function(mui,
 			} else {
 				item.updateTime = ""
 			}
+			if (item.updateTime.length > 0 && item.updateTime.length == 8) {
+				item.updateTime = "20" + item.updateTime;
+			}
 			var href = info.find(site.detail).attr("href");
 			if (href && href.startsWith("/")) {
 				href = site.host + href;
@@ -205,6 +207,8 @@ define(["mui", "jquery", "siteconfig", "common", "gbk", "linqjs"], function(mui,
 						};
 					}).toArray();
 					return result;
+				}).orderByDescending(function(item) {
+					return item.updateTime;
 				}).toArray();
 				success(results);
 			}).catch(fail);

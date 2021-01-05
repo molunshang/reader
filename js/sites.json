@@ -1,29 +1,61 @@
 [{
-	"name": "顶点小说网",
-	"host": "https://www.xindingdianxsw.com",
-	"searchUrl": "https://www.xindingdianxsw.com/search.html?searchtype=all",
+	"name": "暖才文学网",
+	"host": "https://www.xncwxw2.com",
+	"searchUrl": "https://www.xncwxw2.com/modules/article/search.php",
+	"searchEncode": "gbk",
 	"isPost": true,
 	"paramName": "searchkey",
-	"item": "#sitembox dl",
-	"cover": "img",
-	"title": "h3",
-	"author": ".book_other span:first-of-type",
+	"item": "table tr:nth-child(1)~tr",
+	"cover": "",
+	"title": "td:nth-child(1)",
+	"author": "td:nth-child(3)",
 	"updateTime": {
 		"type": "css",
-		"css": ".book_other:nth-of-type(4) span"
+		"css": "td:nth-child(5)"
 	},
-	"detail": "a",
-	"desc": ".book_des",
+	"listChapter": "td:nth-child(2)",
+	"detail": "td:nth-child(1) a",
+	"desc": "",
 	"detailTitle": "#info h1",
-	"detailAuthor": "#info p:first-of-type",
+	"detailAuthor": "#info p:nth-child(2)",
 	"detailUpdated": {
-		"css": "#info p:nth-of-type(3)",
+		"css": "#info p:nth-child(4)",
+		"regex": "\\d{4}-\\d{2}-\\d{2}"
+	},
+	"detailCover": "#fmimg img",
+	"lastChapter": "#list ul:last-child a",
+	"detailDesc": ".intro p",
+	"chapter": "#list li a",
+	"content": "#content",
+	"contentFilter": null
+}, {
+	"name": "翠微居",
+	"host": "http://www.cuiweijuxs.org",
+	"searchUrl": "http://www.cuiweijuxs.org//modules/article/search.php",
+	"searchEncode": "gbk",
+	"isPost": true,
+	"paramName": "searchkey",
+	"item": "table tr:nth-child(1)~tr",
+	"cover": "",
+	"title": "td:nth-child(1)",
+	"author": "td:nth-child(3)",
+	"updateTime": {
+		"type": "css",
+		"css": "td:nth-child(5)"
+	},
+	"listChapter": "td:nth-child(2)",
+	"detail": "td:nth-child(1) a",
+	"desc": "",
+	"detailTitle": "#info h1",
+	"detailAuthor": "#info p:nth-child(2)",
+	"detailUpdated": {
+		"css": "#info p:nth-child(4)",
 		"regex": "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"
 	},
-	"detailCover": "#fmimg img:first",
-	"lastChapter": "#info p:nth-of-type(4)",
-	"detailDesc": "#intro p:first-of-type",
-	"chapter": "#list dt:nth-of-type(2 )~ dd a",
-	"content": "#content p",
+	"detailCover": "#fmimg img",
+	"lastChapter": "#list dd:last-child a",
+	"detailDesc": ".intro p",
+	"chapter": "#list dd a",
+	"content": "#content",
 	"contentFilter": null
 }]

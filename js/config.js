@@ -2,7 +2,7 @@
 	var sites = window.sites;
 	if (!sites) {
 		sites = [];
-		var exists = new Set();
+		var map = new Map();
 		window.sites = sites;
 		sites.findSite = function(url) {
 			var matcher = url.match(/^(http:||https:)\/\/(.+?)\//);
@@ -19,12 +19,13 @@
 		}
 
 		sites.addSite = function(site) {
-			if (exists.has(site.host)) {
-				return;
-			}
-			sites.push(site);
-			exists.add(site.host);
-		};
+			if (map.has(site.host)) {
+				sites[map.get(site.host)] = site;
+			} else {
+				map.set(site.host, sites.length);
+				sites.push(site);
+			};
+		}
 	}
 	var baseSites = [{
 		name: "笔趣阁",
@@ -131,8 +132,8 @@
 		content: "#content"
 	}, {
 		name: "第一版主",
-		host: "http://www.banzhuwang.org/",
-		searchUrl: "http://www.banzhuwang.org/modules/article/search.php",
+		host: "http://www.bz001.cc",
+		searchUrl: "http://www.bz001.cc/modules/article/search.php",
 		searchEncode: "gbk",
 		isPost: true,
 		paramName: "searchkey",
@@ -188,6 +189,34 @@
 		chapter: "#list dt:nth-of-type(2 )~ dd a",
 		content: "#content p",
 		contentFilter: null
+	}, {
+		"name": "顶点小说网",
+		"host": "https://www.xindingdianxsw.com",
+		"searchUrl": "https://www.xindingdianxsw.com/search.html?searchtype=all",
+		"isPost": true,
+		"paramName": "searchkey",
+		"item": "#sitembox dl",
+		"cover": "img",
+		"title": "h3",
+		"author": ".book_other span:nth-child(1)",
+		"updateTime": {
+			"type": "css",
+			"css": ".book_other:nth-of-type(4) span"
+		},
+		"detail": "a",
+		"desc": ".book_des",
+		"detailTitle": "#info h1",
+		"detailAuthor": "#info p:first-of-type",
+		"detailUpdated": {
+			"css": "#info p:nth-of-type(3)",
+			"regex": "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"
+		},
+		"detailCover": "#fmimg img:first",
+		"lastChapter": "#info p:nth-of-type(4)",
+		"detailDesc": "#intro p:first-of-type",
+		"chapter": "#list dt:nth-of-type(2 )~ dd a",
+		"content": "#content p",
+		"contentFilter": null
 	}];
 	for (var i = 0; i < baseSites.length; i++) {
 		sites.addSite(baseSites[i]);

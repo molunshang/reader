@@ -1,6 +1,5 @@
 <!doctype html>
 <html>
-
 	<head>
 		<meta charset="UTF-8">
 		<title></title>
@@ -52,10 +51,9 @@
 			</div>
 		</div>
 		<script src="../js/require.js"></script>
-		<script src="../js/localdata.js"></script>
 		<script type="text/javascript">
 			require(["../js/lib.js"], function() {
-				require(["api", "vue", "mui"], function(api, Vue, mui) {
+				require(["api", "vue", "mui", "store"], function(api, Vue, mui) {
 					require(["mui.lazyload"], function() {
 						require(["mui.lazyload.img"], function() {
 							var novelView = new Vue({
@@ -92,17 +90,18 @@
 									for (var i = 0; i < items.length; i++) {
 										sites.addSite(items[i]);
 									}
-								});
-								api.searchNovel(name).then(function(results) {
-									novelView.items = results;
-									novelView.noResult = results.length == 0;
-									novelView.$nextTick(function() {
-										mui("#novels").imageLazyload({
-											placeholder: 'images/nocover.jpg'
-										})
-									});
 								}).finally(function() {
-									plus.nativeUI.closeWaiting()
+									api.searchNovel(name).then(function(results) {
+										novelView.items = results;
+										novelView.noResult = results.length == 0;
+										novelView.$nextTick(function() {
+											mui("#novels").imageLazyload({
+												placeholder: 'images/nocover.jpg'
+											})
+										});
+									}).finally(function() {
+										plus.nativeUI.closeWaiting()
+									});
 								});
 							});
 						})

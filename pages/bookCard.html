@@ -49,11 +49,10 @@
 				</div>
 			</div>
 		</div>
-		<script src="../js/localdata.js"></script>
 		<script src="../js/require.js"></script>
 		<script type="text/javascript">
 			require(["../js/lib.js"], function() {
-				require(["mui", "api"], function(mui, api) {
+				require(["mui", "api", "store"], function(mui, api) {
 					//加载数据
 					function loadContent(novel) {
 						function complete(book) {
@@ -106,8 +105,6 @@
 						}
 					}
 
-
-					//加入追更
 					function insertMyBook(info) {
 						var book = {
 							id: info.id,
@@ -121,7 +118,6 @@
 							lastRead: new Date().getTime(),
 							sources: info.sources
 						}
-						console.log(JSON.stringify(book));
 						store.appendBook(book);
 						var insertBook = document.getElementById("insertBook");
 						insertBook.className = "mui-btn";
@@ -156,7 +152,16 @@
 					mui.plusReady(function() {
 						var self = plus.webview.currentWebview();
 						var novel = self.data;
-						loadContent(novel);
+						store.getObj("sites.json").then(function(items) {
+							if (!items) {
+								return;
+							}
+							for (var i = 0; i < items.length; i++) {
+								sites.addSite(items[i]);
+							}
+						}).finally(function() {
+							loadContent(novel);
+						});
 					});
 				})
 			})

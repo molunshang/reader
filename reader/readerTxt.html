@@ -550,10 +550,6 @@
 
 					var width = screen.width;
 					var height = screen.height;
-					console.log(screen.availHeight);
-					console.log(screen.height);
-					console.log(screen.availWidth);
-					console.log(screen.width);
 					var ratio = getPixelRatio(ctx);
 					globalFont = (18 * ratio) + "px " + globalFont;
 					sideFont = (13 * ratio) + "px " + sideFont;
@@ -655,8 +651,18 @@
 				mui.fire(list, 'moveTop');
 				var self = plus.webview.currentWebview();
 				var book = globalObj.book = self.book;
-				var site = sites.findSite(book.href);
-				loadChapters(book);
+				store.getObj("sites.json").then(function(items) {
+					if (!items) {
+						return;
+					}
+					for (var i = 0; i < items.length; i++) {
+						sites.addSite(items[i]);
+					}
+				}).finally(function() {
+					var site = sites.findSite(book.href);
+					loadChapters(book);
+				});
+
 				mui("#footer").on('tap', 'a', function() {
 					var type = this.getAttribute("type");
 					if (type == "menu") {
