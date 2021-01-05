@@ -1,0 +1,29 @@
+[{
+	"name": "顶点小说网",
+	"host": "https://www.xindingdianxsw.com",
+	"searchUrl": "https://www.xindingdianxsw.com/search.html?searchtype=all",
+	"isPost": true,
+	"paramName": "searchkey",
+	"item": "#sitembox dl",
+	"cover": "img",
+	"title": "h3",
+	"author": ".book_other span:first-of-type",
+	"updateTime": {
+		"type": "css",
+		"css": ".book_other:nth-of-type(4) span"
+	},
+	"detail": "a",
+	"desc": ".book_des",
+	"detailTitle": "#info h1",
+	"detailAuthor": "#info p:first-of-type",
+	"detailUpdated": {
+		"css": "#info p:nth-of-type(3)",
+		"regex": "/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/"
+	},
+	"detailCover": "#fmimg img:first",
+	"lastChapter": "#info p:nth-of-type(4)",
+	"detailDesc": "#intro p:first-of-type",
+	"chapter": "#list dt:nth-of-type(2 )~ dd a",
+	"content": "#content p",
+	"contentFilter": null
+}]

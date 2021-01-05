@@ -52,6 +52,7 @@
 			</div>
 		</div>
 		<script src="../js/require.js"></script>
+		<script src="../js/localdata.js"></script>
 		<script type="text/javascript">
 			require(["../js/lib.js"], function() {
 				require(["api", "vue", "mui"], function(api, Vue, mui) {
@@ -84,6 +85,14 @@
 								var name = self.keyword;
 								novelView.searchNovel = name;
 								plus.nativeUI.showWaiting();
+								store.getObj("sites.json").then(function(items) {
+									if (!items) {
+										return;
+									}
+									for (var i = 0; i < items.length; i++) {
+										sites.addSite(items[i]);
+									}
+								});
 								api.searchNovel(name).then(function(results) {
 									novelView.items = results;
 									novelView.noResult = results.length == 0;
@@ -102,5 +111,5 @@
 			});
 		</script>
 	</body>
-	
+
 </html>
