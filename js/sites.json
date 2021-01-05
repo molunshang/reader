@@ -18,7 +18,7 @@
 	"detailAuthor": "#info p:first-of-type",
 	"detailUpdated": {
 		"css": "#info p:nth-of-type(3)",
-		"regex": "/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/"
+		"regex": "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"
 	},
 	"detailCover": "#fmimg img:first",
 	"lastChapter": "#info p:nth-of-type(4)",

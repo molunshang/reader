@@ -3206,14 +3206,18 @@ Function.prototype.bind = Function.prototype.bind || function(to) {
 				var isLocal = protocol === 'file:';
 				if ((xhr.status >= 200 && xhr.status < 300) || xhr.status === 304 || (xhr.status === 0 && isLocal)) {
 					dataType = dataType || mimeToDataType(settings.mimeType || xhr.getResponseHeader('content-type'));
-					var strBytes = new Uint8Array(xhr.response)
-					var gbkStr = $.gbkDecoder.decode(strBytes);
-					if (/charset=gbk/.test(gbkStr)) {
-						result = gbkStr;
-					} else if (/charset=gb2312/.test(gbkStr)) {
-						result = $.gb2312Decoder.decode(strBytes);
+					if (xhr.response) {
+						var strBytes = new Uint8Array(xhr.response);
+						var gbkStr = $.gbkDecoder.decode(strBytes);
+						if (/charset=gbk/.test(gbkStr)) {
+							result = gbkStr;
+						} else if (/charset=gb2312/.test(gbkStr)) {
+							result = $.gb2312Decoder.decode(strBytes);
+						} else {
+							result = $.utf8Decoder.decode(strBytes);
+						}
 					} else {
-						result = $.utf8Decoder.decode(strBytes);
+						result = xhr.responseText;
 					}
 					try {
 						if (dataType === 'script') {
