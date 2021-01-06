@@ -1,6 +1,5 @@
 <!doctype html>
 <html>
-
 	<head>
 		<meta charset="UTF-8">
 		<title></title>
@@ -22,7 +21,6 @@
 		}
 	</style>
 	</head>
-
 	<body>
 		<header class="mui-bar mui-bar-nav">
 			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
@@ -53,10 +51,10 @@
 		<script type="text/javascript">
 			require(["../js/lib.js"], function() {
 				require(["mui", "api", "store"], function(mui, api) {
-					//加载数据
 					function loadContent(novel) {
 						function complete(book) {
 							book.sources = novel.sources;
+							book.updateTime = book.updateTime || novel.updateTime;
 							var name = document.getElementById("bookName");
 							var author = document.getElementById("bookAuthor");
 							var lastChapter = document.getElementById("lastChapter");

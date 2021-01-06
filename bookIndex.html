@@ -95,7 +95,7 @@
 													var url = el.getAttribute("pre-image");
 													if (url.endsWith("/")) {
 														url = url.substr(0, url.length - 1);
-													} else if (url.startsWith("/")) {
+													} else if (url.startsWith("/") || url == "images/nocover.jpg") {
 														el.src = url;
 														return;
 													}
@@ -125,7 +125,6 @@
 															dtask.start();
 														});
 													});
-													fileFuture.then(function(path) {})
 													el.removeAttribute("pre-image");
 												});
 											});
@@ -173,6 +172,7 @@
 							});
 
 							var refreshApi;
+
 							function doPullDownRefresh() {
 								refreshApi = mui("#refreshContainer").pullRefresh();
 								if (refreshApi) {
@@ -183,19 +183,26 @@
 									doPullDownRefresh();
 								}, 1)
 							}
-							
+
 							mui.plusReady(function() {
-								var listFuture = store.getBookList();
-								listFuture.then(function(bookList) {
-									if (!bookList || bookList.length <= 0) {
+								store.getObj("sites.json").then(function(items) {
+									if (!items) {
 										return;
 									}
-									list.items = bookList;
-									list.$nextTick(function() {
-										doPullDownRefresh();
+									for (var i = 0; i < items.length; i++) {
+										sites.addSite(items[i]);
+									}
+								}).finally(function() {
+									var listFuture = store.getBookList();
+									listFuture.then(function(bookList) {
+										if (!bookList || bookList.length <= 0) {
+											return;
+										}
+										list.items = bookList;
+										list.$nextTick(function() {
+											doPullDownRefresh();
+										});
 									});
-								}).catch(function() {
-									console.log(JSON.stringify(arguments));
 								});
 							})
 
@@ -214,6 +221,7 @@
 								var item = list.items[index];
 								api.getNovelDetail(item.href).then(function(book) {
 									var older = list.bookMap[item.id];
+									book.chaptersCount = book.chapters.length;
 									if (saveUpdate(older, book)) {
 										changeSize++;
 									}
@@ -230,11 +238,11 @@
 								}
 
 								function saveUpdate(before, after) {
-									before.updateTime = formatDate(after.updateTime);
+									before.updateTime = after.updateTime ? formatDate(after.updateTime) : before.updateTime;
 									before.hasNew = before.lastRead < new Date(before.updateTime).getTime();
-									before.lastChapter = after.lastChapter;
-									before.chaptersCount = after.chapters.length;
 									var hasChange = before.chaptersCount != after.chaptersCount || before.hasNew;
+									before.lastChapter = after.lastChapter;
+									before.chaptersCount = after.chaptersCount;
 									if (hasChange) {
 										store.saveBook(before);
 										return true;
@@ -261,14 +269,14 @@
 								list.removeBook(index);
 							});
 
-							window.addEventListener('addBook', function(e) { //执行刷新
+							window.addEventListener('addBook', function(e) {
 								if (!e.detail) {
 									return;
 								}
 								list.items.unshift(e.detail);
 							});
 
-							window.addEventListener('moveTop', function(e) { //执行刷新
+							window.addEventListener('moveTop', function(e) {
 								if (list.items.length <= 0) {
 									return;
 								}

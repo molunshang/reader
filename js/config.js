@@ -16,8 +16,7 @@
 					return site;
 				}
 			}
-		}
-
+		};
 		sites.addSite = function(site) {
 			if (map.has(site.host)) {
 				sites[map.get(site.host)] = site;
@@ -25,7 +24,16 @@
 				map.set(site.host, sites.length);
 				sites.push(site);
 			};
-		}
+		};
+		sites.reslovePath = function(host, base, current) {
+			if (current.startsWith("http://") || current.startsWith("https://")) {
+				return current;
+			}
+			if (current.startsWith("/")) {
+				return host + current;
+			}
+			return base.substr(0, base.lastIndexOf("/") + 1) + current;
+		};
 	}
 	var baseSites = [{
 		name: "笔趣阁",
@@ -148,17 +156,17 @@
 		listChapter: "td:nth-child(2)",
 		detail: "td:nth-child(1) a",
 		desc: "",
-		detailTitle: ".introduce h1",
-		detailAuthor: ".bq span:nth-child(2) a",
+		detailTitle: "#info h1",
+		detailAuthor: "#info p:nth-child(2)",
 		detailUpdated: {
-			css: ".bq span:nth-child(1)",
-			regex: /\d{4}-\d{2}-\d{2} \d{2}:\d{2}/
+			css: "#info p:nth-child(4)",
+			regex: "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"
 		},
-		detailCover: ".pic img",
-		lastChapter: ".lastchapter a",
-		detailDesc: ".introduce .jj",
-		chapter: ".ml_list li a",
-		content: ".articlecontent",
+		detailCover: "#fming img",
+		lastChapter: "#list dd:last-child a",
+		detailDesc: ".intro p",
+		chapter: "#list dd a",
+		content: "#content",
 		contentFilter: null
 	}, {
 		name: "笔下文学",
@@ -186,7 +194,7 @@
 		detailCover: "#fmimg img",
 		lastChapter: "#info p:nth-child(5) a",
 		detailDesc: "#intro p:nth-child(1)",
-		chapter: "#list dt:nth-of-type(2 )~ dd a",
+		chapter: "#list dt:nth-of-type(2)~ dd a",
 		content: "#content p",
 		contentFilter: null
 	}, {

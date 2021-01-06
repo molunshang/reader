@@ -418,7 +418,6 @@
 
 					var title = document.getElementById("novel_title");
 					title.innerHTML = book.title;
-
 					var contentFuture;
 					store.getBookChapters(book.id).then(function(chapters) {
 						if (chapters.length > 0) {
@@ -446,8 +445,7 @@
 										var $ele = $(ele);
 										var href = $ele.attr("href");
 										newChapters.push({
-											link: href.startsWith("/") ? host + href : (href.startsWith("http://") || href.startsWith(
-												"https://") ? href : url + href),
+											link:  sites.reslovePath(host, url, href),
 											title: $ele.text()
 										});
 									});
@@ -659,7 +657,7 @@
 						sites.addSite(items[i]);
 					}
 				}).finally(function() {
-					var site = sites.findSite(book.href);
+					window.site = sites.findSite(book.href);
 					loadChapters(book);
 				});
 
@@ -693,7 +691,6 @@
 						sourcePage.show();
 					}
 				})
-
 				window.addEventListener("loadContent", function(e) {
 					plus.nativeUI.showWaiting("加载中")
 					menu(false);

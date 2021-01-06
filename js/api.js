@@ -67,6 +67,8 @@ define(["mui", "jquery", "siteconfig", "common", "gbk", "linqjs", "store"], func
 		}
 		if (book.cover && book.cover.startsWith("/")) {
 			book.cover = site.host + book.cover;
+		} else if (!book.cover) {
+			book.cover = "images/nocover.jpg";
 		}
 		var updateStr = doc.find(site.detailUpdated.css).text();
 		var updated = updateStr.match(site.detailUpdated.regex);
@@ -91,8 +93,7 @@ define(["mui", "jquery", "siteconfig", "common", "gbk", "linqjs", "store"], func
 			var $ele = $(ele);
 			var href = $ele.attr("href");
 			chapters.push({
-				link: href.startsWith("/") ? site.host + href : (href.startsWith("http://") || href.startsWith(
-					"https://") ? href : url + href),
+				link: sites.reslovePath(site.host, url, href),
 				title: $ele.text()
 			});
 		});
@@ -194,7 +195,9 @@ define(["mui", "jquery", "siteconfig", "common", "gbk", "linqjs", "store"], func
 					}
 					list = list.concat(items);
 				});
-				var results = Enumerable.from(list).groupBy(function(item) {
+				var results = Enumerable.from(list).where(function(item) {
+					return item.title.indexOf(name) > -1 || item.author.indexOf(name) > -1;
+				}).groupBy(function(item) {
 					return item.title + "||" + item.author
 				}).select(function(group) {
 					var result = group.orderByDescending(function(item) {
